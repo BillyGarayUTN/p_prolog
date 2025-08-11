@@ -200,4 +200,6 @@ nacioEn(platon, fecha(Fecha, antesCristo)).
 nacidoAntesDe(Persona, Anio) :-
     nacioEn(Persona, fecha(FechaNacimiento, antesCristo)),
     FechaNacimiento < Anio.
-    
+
+
+
