@@ -42,4 +42,52 @@ puedeSalir( Persona,NombreSala ):-
     persona(Persona,_,Peculiaridad),
     not(member(claustrofobia, Peculiaridad)),
     nivelDeDificultadDeLaSala(NombreSala,Dificultad),
-    Dificultad == 1.
+    Dificultad = 1.
+
+puedeSalir( Persona,NombreSala ):-
+    persona(Persona,Edad,Peculiaridad),
+    not(member(claustrofobia, Peculiaridad)),
+    Edad > 13,
+    nivelDeDificultadDeLaSala(NombreSala,Dificultad),
+    Dificultad < 5.
+
+% 3. ---------------------------------------
+tieneSuerte(Persona, NombreSala) :-
+    persona(Persona, Edad, []),
+    nivelDeDificultadDeLaSala(NombreSala, Dificultad),
+    ( Dificultad = 1
+    ; Edad > 13, Dificultad < 5
+    ).
+
+% 4. ---------------------------------------
+esMacabra(Empresa):-
+    esSalaDe(_, Empresa),
+    forall( esSalaDe(NombreSala, Empresa), esExperienciaTerrorifica(NombreSala) ).
+
+esExperienciaTerrorifica(NombreSala):-
+    sala(NombreSala, terrorifica(_, _)).
+
+% 5. ---------------------------------------
+empresaCopada(Empresa):-
+    esSalaDe(_,Empresa),
+    not( esMacabra(Empresa) ),
+    findall( Dificultad,(esSalaDe(NombreSala,Empresa), nivelDeDificultadDeLaSala(NombreSala,Dificultad)),ListaDeDificultades),
+    length(ListaDeDificultades, CantidadDeSalas),
+    sumlist(ListaDeDificultades,Suma),
+    Promedio is Suma / CantidadDeSalas,
+    Promedio < 4.
+
+% 6. --------------------------------------
+% supercelula
+esSalaDe(estrellasDePelea, supercelula).
+sala(estrellasDePelea, familiar(videojuegos, 7)).
+
+esSalaDe(choqueDeLaRealeza, supercelula).
+% (sin hecho sala/2 hasta conocer habitaciones)
+
+% SKPista
+esSalaDe(miseriaDeLaNoche, skpista).
+sala(miseriaDeLaNoche, terrorifica(150, 21)).
+
+% (opcional) empresa sin salas explícitas
+empresa(vertigo).
