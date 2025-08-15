@@ -62,10 +62,11 @@ contieneFrase(Palabra1, Palabra2, Post) :-
 contenidoPost(tuid(_, Contenido), Contenido).
 contenidoPost(retuid(_, tuid(_, Contenido)), Contenido).
 
-% Predicado auxiliar para verificar palabras consecutivas
-contienePalabrasConsecutivas(Palabra1, Palabra2, [Palabra1, Palabra2 | _]).
-contienePalabrasConsecutivas(Palabra1, Palabra2, [_ | Resto]) :-
-    contienePalabrasConsecutivas(Palabra1, Palabra2, Resto).
+% Predicado auxiliar para verificar palabras consecutivas usando nth0/3
+contienePalabrasConsecutivas(Palabra1, Palabra2, Contenido) :-
+    nth0(Indice, Contenido, Palabra1),
+    IndiceSiguiente is Indice + 1,
+    nth0(IndiceSiguiente, Contenido, Palabra2).
 
 
 /*
@@ -127,4 +128,57 @@ autorDelPost(Usuario, retuid(Usuario, _)).
 en sus Posts, no tiene ReTuids (él/ella no retuidea, es “100% ORISHINAL”), y además nunca incluyó
 la frase "cryptos gratis".
 */
+favorecido(Usuario) :-
+    publicacion(_, tuid(Usuario, Contenido)),
+    not(contieneFrase("cryptos", "gratis", Contenido)),
+    not(publicacion(_, retuid(Usuario, _))).
 
+/*
+6) esteEsWallE/1, que se cumple para un usuario que tiene altas chances de ser un bot. 
+Estos son los usuarios para los que todos sus Posts son de bot, o si existe un día en el que hizo más de 5 Posts.
+*/
+% Primera cláusula: todos sus posts son de bot
+esteEsWallE(Usuario) :-
+    publicacionDe(Usuario, _),
+    forall(publicacionDe(Usuario, Post), esDeBot(Post)).
+
+% Segunda cláusula: existe un día en el que hizo más de 5 publicaciones
+esteEsWallE(Usuario) :-
+    publicacion(fecha(Dia, Mes, Anio), PostDelUsuario),
+    publicacionDe(Usuario, PostDelUsuario),
+    findall(PostDelMismoDia, 
+    (publicacion(fecha(Dia, Mes, Anio), PostDelMismoDia), publicacionDe(Usuario, PostDelMismoDia)), 
+    PublicacionesDelUsuarioEseDia),
+    length(PublicacionesDelUsuarioEseDia, CantidadDePublicaciones),
+    CantidadDePublicaciones > 5.
+
+
+/*
+7) Implementar elMejorTimeline/2, que relaciona un número de publicaciones pedidas, 
+    y una lista con esa cantidad de posts (sin repetir), que pueden ser:
+a) Posts de usuarios favorecidos.
+b) Posts donde el verdadero autor sea "melonTusk".
+c) Posts que contengan la frase "paga Tuiderr".
+No necesita ser inversible para la cantidad
+*/
+elMejorTimeline(CantidadPedida, TimelineResultante) :-
+    findall(PostParaTimeline, postValioso(PostParaTimeline), TodosLosPostsValiosos),
+    list_to_set(TodosLosPostsValiosos, PostsValiososSinRepetir),
+    length(PostsValiososSinRepetir, CantidadDisponible),
+    CantidadPedida =< CantidadDisponible,
+    length(TimelineResultante, CantidadPedida),
+    append(TimelineResultante, _, PostsValiososSinRepetir).
+
+% Predicado auxiliar que define qué posts son valiosos para el timeline
+postValioso(Post) :-
+    publicacion(_, Post),
+    autorDelPost(Usuario, Post),
+    favorecido(Usuario).
+
+postValioso(Post) :-
+    publicacion(_, Post),
+    verdaderoAutor(melonTusk, Post).
+
+postValioso(Post) :-
+    publicacion(_, Post),
+    contieneFrase("paga", "Tuiderr", Post).
