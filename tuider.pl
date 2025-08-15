@@ -99,10 +99,10 @@ obtenerFechaPost(Post, Fecha) :-
 3) Hacer verdaderoAutor/2, que relaciona un Post con su autor verdadero, siendo que, en los casos 
 de los ReTuids, el verdadero autor es el que publicó el Tuid original.
 */
-verdaderoAutor(Usuario, Post):-
+verdaderoAutor(Post, Autor):-
     publicacion(_, tuid(Usuario,Post)).
 
-verdaderoAutor(Usuario, Post) :-
+verdaderoAutor(Post, Autor) :-
     publicacion(_, retuid(_, tuid(Usuario, Post))).
 
 /*
