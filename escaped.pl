@@ -4,6 +4,9 @@ persona(agus, 25, [lecturaVeloz, ojoObservador, minuciosidad]).
 persona(fran, 30, [fanDeLosComics]).
 persona(rolo, 12, []).
 
+edadPersona(Edad):-persona(_, Edad, _).
+%Hay varias empresas metidas en este rubro y cada una tiene distintas salas:
+
 %esSalaDe(NombreSala, Empresa).
 esSalaDe(elPayasoExorcista, salSiPuedes).
 esSalaDe(socorro, salSiPuedes).
@@ -11,83 +14,50 @@ esSalaDe(linternas, elLaberintoso).
 esSalaDe(guerrasEstelares, escapepepe).
 esSalaDe(fundacionDelMulo, escapepepe).
 
+%Las salas no son todas iguales. Contamos con las siguientes experiencias:
 %terrorifica(CantidadDeSustos, EdadMinima).
 %familiar(Tematica, CantidadDeHabitaciones).
 %enigmatica(Candados).
-%sala(NombreSala, Experiencia).
+
+%sala(Nombre, Experiencia).
 sala(elPayasoExorcista, terrorifica(100, 18)).
 sala(socorro, terrorifica(20, 12)).
 sala(linternas, familiar(comics, 5)).
 sala(guerrasEstelares, familiar(futurista, 7)).
 sala(fundacionDelMulo, enigmatica([combinacionAlfanumerica, deLlave, deBoton])).
 
-sala(fundacion, enigmatica([deBoton])).
+
+% Punto 1
+%nivelDeDificultadDeLaSala(Sala,Dificultad)
+nivelDeDificultadDeLaSala(Sala,Dificultad):-
+    sala(Sala, Experiencia),
+    dificultadPorExperiencia(Experiencia,Dificultad).
+
+dificultadPorExperiencia(terrorifica(CantidadDeSustos, EdadMinima),Dificultad):-
+    Dificultad is CantidadDeSustos-EdadMinima.
+dificultadPorExperiencia(familiar(futurista,_),15).
+dificultadPorExperiencia(familiar(Tematica,Habitaciones),Habitaciones):-Tematica \= futurista.
+dificultadPorExperiencia(enigmatica(Candados),CantidadDeCandados):-length(Candados,CantidadDeCandados).
+
+% Punto 2
+%puedeSalir(Persona,Sala)
+puedeSalir(Persona,Sala):-
+    persona(Persona, _, Peculiaridades),
+    nivelDeDificultadDeLaSala(Sala,Dificultad),
+    Dificultad==1,
+    not( member(claustrofobia, Peculiaridades) ).
 
 
-% 1. -------------------------------------
-nivelDeDificultadDeLaSala(NombreSala,Dificultad):-
-    sala(NombreSala,Experiencia),
-    dificultadSegunExperiencia(Experiencia,Dificultad).
+puedeSalir(Persona,Sala):- 
+    persona(Persona, Edad, Peculiaridades),  
+    Edad>13,
+    nivelDeDificultadDeLaSala(Sala,Dificultad),
+    Dificultad<5,
+    noEsClaustrofobico( Persona).
 
-dificultadSegunExperiencia(terrorifica(CantidadDeSustos, EdadMinima),Dificultad):-
-    Dificultad is CantidadDeSustos - EdadMinima.
-dificultadSegunExperiencia(familiar(futurista, _),15).
-dificultadSegunExperiencia(familiar(_, CantidadDeHabitaciones),Dificultad):- Dificultad = CantidadDeHabitaciones.
-dificultadSegunExperiencia(enigmatica(Candados),Dificultad):-
-    length(Candados, CantidadDeCandados),
-    Dificultad = CantidadDeCandados.
 
-% 2. -------------------------------------
-puedeSalir( Persona,NombreSala ):-
-    persona(Persona,_,Peculiaridad),
-    not(member(claustrofobia, Peculiaridad)),
-    nivelDeDificultadDeLaSala(NombreSala,Dificultad),
-    Dificultad = 1.
+noEsClaustrofobico( Persona) :- persona(Persona, Edad, Peculiaridades), not( member(claustrofobia, Peculiaridades) ).
 
-puedeSalir( Persona,NombreSala ):-
-    persona(Persona,Edad,Peculiaridad),
-    not(member(claustrofobia, Peculiaridad)),
-    Edad > 13,
-    nivelDeDificultadDeLaSala(NombreSala,Dificultad),
-    Dificultad < 5.
-
-% 3. ---------------------------------------
-tieneSuerte(Persona, NombreSala) :-
-    persona(Persona, Edad, []),
-    nivelDeDificultadDeLaSala(NombreSala, Dificultad),
-    ( Dificultad = 1
-    ; Edad > 13, Dificultad < 5
-    ).
-
-% 4. ---------------------------------------
-esMacabra(Empresa):-
-    esSalaDe(_, Empresa),
-    forall( esSalaDe(NombreSala, Empresa), esExperienciaTerrorifica(NombreSala) ).
-
-esExperienciaTerrorifica(NombreSala):-
-    sala(NombreSala, terrorifica(_, _)).
-
-% 5. ---------------------------------------
-empresaCopada(Empresa):-
-    esSalaDe(_,Empresa),
-    not( esMacabra(Empresa) ),
-    findall( Dificultad,(esSalaDe(NombreSala,Empresa), nivelDeDificultadDeLaSala(NombreSala,Dificultad)),ListaDeDificultades),
-    length(ListaDeDificultades, CantidadDeSalas),
-    sumlist(ListaDeDificultades,Suma),
-    Promedio is Suma / CantidadDeSalas,
-    Promedio < 4.
-
-% 6. --------------------------------------
-% supercelula
-esSalaDe(estrellasDePelea, supercelula).
-sala(estrellasDePelea, familiar(videojuegos, 7)).
-
-esSalaDe(choqueDeLaRealeza, supercelula).
-% (sin hecho sala/2 hasta conocer habitaciones)
-
-% SKPista
-esSalaDe(miseriaDeLaNoche, skpista).
-sala(miseriaDeLaNoche, terrorifica(150, 21)).
-
-% (opcional) empresa sin salas explícitas
-empresa(vertigo).
+%punto 3
+%tieneSuerte/2:
+tieneSuerte( Persona, Sala)

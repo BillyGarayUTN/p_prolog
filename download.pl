@@ -1,4 +1,3 @@
-
 % libro(título, autor, edición) 
 contenido(amazingzone, host1, 0.1, libro(lordOfTheRings, jrrTolkien, 4)). 
 contenido(g00gle, ggle1, 0.04, libro(fundation, asimov, 3)). 
@@ -38,135 +37,103 @@ descarga(mati1009, infinityWar).
 descarga(leoOoOok, dark).
 descarga(leoOoOok, powerslave).
 
-% contenido/4
-% contenido (Empresa,Servidor,PesoGB,contenido)
+usuario(Usuario):-descarga(Usuario,_).
 
-%contenido puede ser :  libro, musica, serie o pelicula.
+% 1 a titulo/2. Relacionar un contenido con su título.
+% titulo(Contenido,Titulo).
+titulo(libro(T, _, _), T).
+titulo(musica(T, _, _), T).
+titulo(serie(T, _), T).
+titulo(pelicula(T, _, _), T).
 
-/* 
-
-ser totalmente inversibles, a menos que se aclare lo contrario.
-
-1. La vida es más fácil cuando hablamos solo de los títulos de las cosas...
-
-a. titulo/2. Relacionar un contenido con su título.
-b. descargaContenido/2. Relaciona a un usuario con un contenido descargado, es decir 
-    toda la información completa del mismo.
-*/
-contenido(Contenido):-contenido(_, _, _, Contenido).
-
-% a
-% titulo(Contenido, Titulo)
-titulo(Contenido,Titulo):-
-    contenido(Contenido),
-    tituloContenido(Contenido,Titulo).
-
-tituloContenido(libro(Titulo, _, _), Titulo).
-tituloContenido(musica(Titulo, _, _), Titulo).
-tituloContenido(serie(Titulo, _), Titulo).
-tituloContenido(pelicula(Titulo, _, _), Titulo).
-
-% b
-% descargaContenido(Usuario, Contenido)
-descargaContenido(Usuario,Contenido):-
+% 1 b descargaContenido/2. Relaciona a un usuario con un
+%     contenido descargado, es decir toda la información completa del mismo.
+descargaContenido( Usuario,Contenido):-
     descarga(Usuario, Titulo),
-    titulo(Contenido,Titulo).
-%   contenido(_, _, _, Contenido),
+    titulo(Contenido, Titulo).
 
-% 2. contenidoPopular/1. Un contenido es popular si lo descargan más de 10 usuarios.
 
-contenidoPopular(Contenido) :-
-    titulo(Contenido, Titulo),
-    findall(Usuario, descargaContenido(Usuario, Contenido), Usuarios),
-    length(Usuarios, Cantidad),
-    Cantidad > 10.
+% 2 . contenidoPopular/1. Un contenido es popular si lo descargan más de 10 usuarios.
+
+contenidoPopular(Contenido):-
+    titulo(Contenido, _),
+    findall(Usuario, descargaContenido(Usuario,Contenido) , Usuarios),
+    length( Usuarios,Tamanio),
+    Tamanio > 10.
 
 % 3. cinefilo/1 Un usuario es cinéfilo si solo descarga contenido audiovisual (series y películas)
-usuario(Usuario):-
-    distinct(Usuario,descarga(Usuario,_)).
 
 cinefilo(Usuario):-
-    usuario(Usuario),
-    forall(descargaContenido(Usuario,Contenido), esAudioVisual(Contenido)).
+    descarga(Usuario,_),
+    forall( descarga( Usuario, Titulo), (titulo(Contenido,Titulo), audiovisual(Contenido))).
 
-/* esAudioVisual(Contenido):- titulo(Contenido, Titulo), (contenido(_, _, _, serie(Titulo, _));
-    contenido(_, _, _, pelicula(Titulo, _, _))  ).*/
-esAudioVisual(serie(_,_)).
-
-esAudioVisual(pelicula(_, _, _)).
+audiovisual(serie(_,_)).
+audiovisual(pelicula(_,_,_)).
 
 % 4. totalDescargado/2. Relaciona a un usuario con el total del peso del contenido de sus descargas, en GB
-totalDescargado(Usuario,PesoTotal):-
-    usuario(Usuario),
-    findall(Peso, (descargaContenido(Usuario,Contenido),contenido(_, _, Peso, Contenido)), Pesos),
-    sumlist(Pesos, PesoTotal).
+
+totalDescargado( Usuario,TotalPeso):-
+    descarga(Usuario,_),
+    findall( Peso, (descargaContenido(Usuario,Contenido), contenido(_,_,Peso,Contenido)), Pesos),
+    sumlist(Pesos,TotalPeso). 
+
 
 % 5. usuarioCool/1. Un usuario es cool, si solo descarga contenido cool:
-% a. La música es cool si el género es kpop o hardRock.
-% b. Las series, si tienen más de un género.
-% c. Las películas anteriores al 2010 son cool.
-% d. Ningún libro es cool. 
+%   a. La música es cool si el género es kpop o hardRock.
+%   b. Las series, si tienen más de un género.
+%   c. Las películas anteriores al 2010 son cool.
+%   d. Ningún libro es cool.
 
-usuarioCool(Usuario):-
-    usuario(Usuario),
-    forall( descargaContenido(Usuario,Contenido),esContenidoCool(Contenido)).
+usuarioCool( Usuario):-
+    descarga(Usuario,_),
+    forall( descargaContenido(Usuario,Contenido), esContenidoCool(Contenido)).
+
 
 esContenidoCool(musica(_,kpop,_)).
 esContenidoCool(musica(_,hardRock,_)).
-esContenidoCool(serie(_, Generos)):-length(Generos, Cantidad),Cantidad > 1.
-esContenidoCool(pelicula(_, _, Anio)):-Anio < 2010.
+esContenidoCool(serie(_,Generos)):- length( Generos,Tamanio), Tamanio>1.
+esContenidoCool(pelicula(_,_,Anio)):-  Anio < 2010.
 
-% 6.empresaHeterogenea/1. Si todo su contenido no es del mismo tipo. Es decir, todo película, o todo serie... etc.
-empresaHeterogenea(Empresa) :-
-    contenido(Empresa,_,_,Contenido1),
-    contenido(Empresa,_,_,Contenido2),
+% 6. empresaHeterogenea/1. Si todo su contenido no es del mismo tipo. Es decir, todo película, o todo serie... etc.
+empresaHeterogenea(Empresa):-
+    contenido(Empresa, _, _, Contenido1),
+    contenido(Empresa, _, _, Contenido2),
     tipoContenido(Contenido1, Tipo1),
     tipoContenido(Contenido2, Tipo2),
     Tipo1 \= Tipo2.
 
-tipoContenido(libro(_, _, _), libro).
-tipoContenido(musica(_, _, _), musica).
-tipoContenido(serie(_, _), serie).
-tipoContenido(pelicula(_, _, _), pelicula).
+tipoContenido(libro(_,_,_), libro).
+tipoContenido(musica(_,_,_), musica).
+tipoContenido(serie(_,_), serie).
+tipoContenido(pelicula(_,_,_), pelicula).
 
-% 7. Existe la sobrecarga de equipos, por lo tanto vamos a querer trabajar sobre los servidores a 
-%   partir del peso de su contenido:
-% a. cargaServidor/3. Relaciona a una empresa con un servidor de dicha empresa y su carga, es
-%   decir el peso conjunto de todo su contenido.
-% b. tieneMuchaCarga/2. Relaciona una empresa con su servidor que tiene exceso de carga. Esto pasa
-%   cuando supera los 1000 GB de información.
-% c. servidorMasLiviano/2. Relaciona a la empresa con su servidor más liviano, que es aquel que tiene
-%   menor carga, teniendo en cuenta que no puede tener mucha carga.
-% d. balancearServidor/3. Relaciona una empresa, un servidor que tiene mucha carga y el servidor
-%   más liviano de la empresa; de forma tal de planificar una migración de contenido del primero
-%   al segundo, los cuales deben ser distintos.
-
-% 7.a --------------------------------------
-empresaServidor(Empresa,Servidor):-
-    distinct(Servidor,contenido(Empresa,Servidor,_,_)).
-
-cargaServidor(Empresa, Servidor, Carga) :-
-    empresaServidor(Empresa, Servidor),
+% 7 a) cargaServidor/3. Relaciona a una empresa con un servidor de dicha empresa y su carga, 
+%   es decir el peso conjunto de todo su contenido.
+cargaServidor(Empresa, Servidor, Carga):-
+    contenido(Empresa, Servidor, _, _),
     findall(Peso, contenido(Empresa, Servidor, Peso, _), Pesos),
     sumlist(Pesos, Carga).
-% 7.b ---------------------------------------
-tieneMuchaCarga(Empresa, Servidor) :-
-    contenido(Empresa,Servidor,PesoGB,_),
-    PesoGB > 1000.
-% 7.c ---------------------------------------
-servidorMasLiviano(Empresa, Servidor) :-
+
+% 7 b) tieneMuchaCarga/2. Relaciona una empresa con su servidor que tiene exceso de carga. 
+%   Esto pasa cuando supera los 1000 GB de información.
+tieneMuchaCarga(Empresa, Servidor):-
     cargaServidor(Empresa, Servidor, Carga),
-    Carga =< 1000,    % “no tiene mucha carga” sin usar \+
-    forall(cargaServidor(Empresa, _, OtraCarga), % es el mínimo (o uno de los mínimos)
-    Carga =< OtraCarga).
-/*
-servidorMasLiviano(Empresa, Servidor) :-
-    cargaServidor(Empresa, Servidor, Carga),
-    not(tieneMuchaCarga(Empresa, Servidor)),
-    not((cargaServidor(Empresa, _, OtraCarga), OtraCarga < Carga)).
-*/
-% 7.d ---------------------------------------
-balancearServidor(Empresa, ServidorConMuchaCarga, ServidorMasLiviano) :-
-    tieneMuchaCarga(Empresa, ServidorConMuchaCarga),
-    servidorMasLiviano(Empresa, ServidorMasLiviano),
-    ServidorConMuchaCarga \= ServidorMasLiviano.
+    Carga > 1000.
+
+% 7 c) servidorMasLiviano/2. Relaciona a la empresa con su servidor más liviano, 
+%   que es aquel que tiene menor carga, teniendo en cuenta que no puede tener mucha carga.
+servidorMasLiviano(Empresa, ServidorLiviano):-
+    cargaServidor(Empresa, ServidorLiviano, CargaMinima),
+    not(tieneMuchaCarga(Empresa, ServidorLiviano)),
+    forall(
+        (cargaServidor(Empresa, OtroServidor, OtraCarga), not(tieneMuchaCarga(Empresa, OtroServidor))),
+        CargaMinima =< OtraCarga
+    ).
+
+% 7 d) balancearServidor/3. Relaciona una empresa, un servidor que tiene mucha carga 
+%   y el servidor más liviano de la empresa; de forma tal de planificar una migración 
+%   de contenido del primero al segundo, los cuales deben ser distintos.
+balancearServidor(Empresa, ServidorCargado, ServidorLiviano):-
+    tieneMuchaCarga(Empresa, ServidorCargado),
+    servidorMasLiviano(Empresa, ServidorLiviano),
+    ServidorCargado \= ServidorLiviano.
